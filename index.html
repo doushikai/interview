@@ -110,7 +110,7 @@
 
   <div class="card">
     <h2>総合評価</h2>
-    <div class="mb"><span class="total" id="totalScore">0</span><span class="totalunit">点 / 25点満点（入力済み <span id="answeredCount">0</span>/5項目）</span></div>
+    <div class="mb"><span class="total" id="totalScore">0</span><span class="totalunit">点 / 30点満点（入力済み <span id="answeredCount">0</span>/6項目）</span></div>
     <div class="mb">
       <label class="field-label">判定</label>
       <div class="judg-row" id="judgmentRow"></div>
@@ -191,14 +191,13 @@ const ITEMS = [
   },
   {
     key: "responsibility", shortLabel: "社会人能力・他責傾向",
-    title: "④基本的社会人能力・自立性（他責傾向の有無・一般的な常識）",
+    title: "④基本的社会人能力・自立性（他責傾向の有無）",
     questions: [
       "これまでの職歴の中で一番の壁（挫折や失敗）は何でしたか？また、それをどう乗り越え（対処し）ましたか？",
       "前職（現職）の退職理由を差し支えない範囲で教えてください。"
     ],
     checkpoints: [
-      "【リスク回避の視点】困難や退職の理由を環境・他人のせい（他責）にしすぎていないか。「自分ができたこと・学ぶべき点」に目を向けられているか。",
-      "身だしなみ、言葉遣い、時間厳守、挨拶などの基本的ビジネスマナーが備わっているか。"
+      "【リスク回避の視点】困難や退職の理由を環境・他人のせい（他責）にしすぎていないか。「自分ができたこと・学ぶべき点」に目を向けられているか。"
     ],
     memoLabel: "評価理由・具体的エピソードメモ"
   },
@@ -216,6 +215,16 @@ const ITEMS = [
     ],
     checkpointNote: "※良し悪しの判断ではなく、配属先との相性を見る観点です",
     memoLabel: "個性の特徴・適正の配属先メモ"
+  },
+  {
+    key: "manners", shortLabel: "基本的ビジネスマナー",
+    title: "⑥基本的ビジネスマナー（身だしなみ・言葉遣い・時間厳守・挨拶）",
+    questions: [],
+    observationNote: "特定の質問は設けず、面接全体を通じての観察で評価する項目です。",
+    checkpoints: [
+      "身だしなみ、言葉遣い、時間厳守、挨拶などの基本的ビジネスマナーが備わっているか。"
+    ],
+    memoLabel: "評価理由・具体的エピソードメモ"
   }
 ];
 
@@ -248,14 +257,20 @@ ITEMS.forEach(item => {
   const card = document.createElement("div");
   card.className = "card";
 
-  const qHtml = item.questions.map(q => `<li>${q}</li>`).join("");
   const cHtml = item.checkpoints.map(c => `<li>${c}</li>`).join("");
   const noteHtml = item.checkpointNote ? `<p class="note">${item.checkpointNote}</p>` : "";
 
+  let questionBlockHtml;
+  if (item.questions && item.questions.length > 0) {
+    const qHtml = item.questions.map(q => `<li>${q}</li>`).join("");
+    questionBlockHtml = `<div class="qlabel">質問</div><ul class="qlist">${qHtml}</ul>`;
+  } else {
+    questionBlockHtml = `<div class="qlabel">確認方法</div><p class="note" style="margin-top:0;">${item.observationNote || "面接全体を通じての観察で評価します。"}</p>`;
+  }
+
   card.innerHTML = `
     <h2>${item.title}</h2>
-    <div class="qlabel">質問</div>
-    <ul class="qlist">${qHtml}</ul>
+    ${questionBlockHtml}
     <div class="qlabel">チェックポイント</div>
     <ul class="qlist check">${cHtml}</ul>
     ${noteHtml}
