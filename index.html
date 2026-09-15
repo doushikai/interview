@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>採用面接評価アプリ</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: #F5F3ED;
+    color: #2C3A36;
+    padding-bottom: 100px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 18px; text-align: center; padding: 14px 0; margin: 0; background: #2C3A36; color: #fff; }
+  .card {
+    background: #fff;
+    border: 1px solid #E4DFD3;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 12px; color: #2C3A36; }
+  label.field-label {
+    display: block; font-size: 12px; font-weight: 600; color: #7A7364; margin-bottom: 4px;
+  }
+  input[type=text], input[type=date], textarea, select {
+    width: 100%;
+    border: 1px solid #D8D2C4;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #FCFBF8;
+  }
+  textarea { resize: vertical; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mb { margin-bottom: 14px; }
+  .qlabel { font-size: 12px; font-weight: 600; color: #7A7364; margin: 10px 0 4px; }
+  ul.qlist { margin: 0 0 10px; padding-left: 18px; font-size: 14px; line-height: 1.6; }
+  ul.qlist.check li { color: #5C5A4E; }
+  .note { font-size: 12px; font-style: italic; color: #8B7355; margin-top: -6px; margin-bottom: 10px; }
+  .score-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .score-btn {
+    flex: 1; height: 48px; border-radius: 8px; border: 2px solid #D8D2C4;
+    background: #fff; color: #4A4A42; font-size: 17px; font-weight: 700; cursor: pointer;
+  }
+  .score-btn.active { background: #3E6259; border-color: #3E6259; color: #fff; }
+  .score-desc { font-size: 13px; color: #5C5A4E; min-height: 20px; margin-bottom: 10px; }
+  .judg-row { display: flex; gap: 8px; }
+  .judg-btn {
+    flex: 1; height: 44px; border-radius: 8px; border: 2px solid #D8D2C4;
+    background: #fff; color: #4A4A42; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .judg-btn.active { background: #3E6259; border-color: #3E6259; color: #fff; }
+  .total { font-size: 22px; font-weight: 800; color: #3E6259; }
+  .totalunit { font-size: 13px; color: #7A7364; margin-left: 6px; }
+  .status {
+    border-radius: 8px; padding: 10px 12px; font-size: 14px; font-weight: 600; margin-bottom: 14px;
+  }
+  .status.error { background: #F6E5DF; color: #8B4530; }
+  .status.success { background: #E5EEE7; color: #2C5B45; }
+  .footer-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: #FAF9F5;
+    border-top: 1px solid #E4DFD3; padding: 12px 16px;
+  }
+  .footer-bar .inner { max-width: 640px; margin: 0 auto; }
+  .save-btn {
+    width: 100%; height: 54px; border: none; border-radius: 12px;
+    background: #3E6259; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+  }
+  .save-btn:disabled { background: #9BAFA6; }
+  .scaleToggle {
+    font-size: 13px; font-weight: 600; color: #3E6259; background: none; border: none;
+    text-decoration: underline; cursor: pointer; padding: 0; margin-bottom: 8px;
+  }
+  .scaleBox { background: #F0EEE4; border: 1px solid #E4DFD3; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 14px; }
+  .scaleBox p { margin: 4px 0; }
+  .helpNote { font-size: 12px; color: #7A7364; text-align: center; margin: 6px 0 16px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<h1>採用面接評価アプリ</h1>
+<div class="wrap">
+
+  <button class="scaleToggle" id="scaleToggleBtn" type="button">評価基準（1〜5）を確認する</button>
+  <div class="scaleBox" id="scaleBox" style="display:none;"></div>
+
+  <div class="card">
+    <div class="mb">
+      <label class="field-label">応募者氏名</label>
+      <input type="text" id="candidateName" placeholder="山田 太郎">
+    </div>
+    <div class="grid2">
+      <div>
+        <label class="field-label">面接日</label>
+        <input type="date" id="interviewDate">
+      </div>
+      <div>
+        <label class="field-label">面接官氏名</label>
+        <input type="text" id="interviewerName" placeholder="施設 花子">
+      </div>
+    </div>
+  </div>
+
+  <div id="itemsContainer"></div>
+
+  <div class="card">
+    <h2>総合評価</h2>
+    <div class="mb"><span class="total" id="totalScore">0</span><span class="totalunit">点 / 25点満点（入力済み <span id="answeredCount">0</span>/5項目）</span></div>
+    <div class="mb">
+      <label class="field-label">判定</label>
+      <div class="judg-row" id="judgmentRow"></div>
+    </div>
+    <div class="mb">
+      <label class="field-label">採用にあたってのリスク（気になる点）</label>
+      <textarea id="risk" rows="2"></textarea>
+    </div>
+    <div class="mb">
+      <label class="field-label">強み・期待できる点</label>
+      <textarea id="strength" rows="2"></textarea>
+    </div>
+    <div>
+      <label class="field-label">総合所感・判定理由</label>
+      <textarea id="overallComment" rows="3"></textarea>
+    </div>
+  </div>
+
+  <div id="statusBox"></div>
+
+  <p class="helpNote">保存すると、この候補者1名分の評価が<b>CSVファイルとしてこの端末にダウンロード</b>されます。<br>全員分のCSVを集めて、施設長が1つのファイルにまとめてください（同じ項目順のため、コピー＆貼り付けで結合できます）。</p>
+</div>
+
+<div class="footer-bar">
+  <div class="inner">
+    <button class="save-btn" id="saveBtn" type="button">この候補者の評価を保存（CSVダウンロード）</button>
+  </div>
+</div>
+
+<script>
+const SCALE = [
+  {score:5, label:"非常に優れている", desc:"法人のお手本・リーダー候補となり得る行動が確認できる"},
+  {score:4, label:"良好", desc:"法人の求める基準を満たしており、即戦力・安心感がある"},
+  {score:3, label:"標準・許容範囲", desc:"特段の懸念はなく、指導・育成により十分活躍できる"},
+  {score:2, label:"やや懸念あり", desc:"指導に相応の手間を要する、または一部行動にリスクの兆候あり"},
+  {score:1, label:"懸念あり・不適格", desc:"法人方針に合わない、重大な労務リスクやトラブルの懸念がある"},
+];
+
+const ITEMS = [
+  {
+    key: "teamwork", shortLabel: "協調性・傾聴力",
+    title: "①他者を尊重し、チームで動くことができる（協調性・傾聴力）",
+    questions: [
+      "これまでに意見や価値観の異なる同僚や利用者様と関わる際、どのように信頼関係を築いてきましたか？",
+      "チームで取り組む際、意見の対立が起きたらどう行動しますか？"
+    ],
+    checkpoints: [
+      "他人の意見を否定せず、まず傾聴・受容する柔軟性があるか。",
+      "「自分だけの正しさ」を主張せず、組織やチームの目標に合わせた行動を選択できるか。"
+    ],
+    memoLabel: "評価理由・具体的エピソードメモ"
+  },
+  {
+    key: "initiative", shortLabel: "主体性・ホウレンソウ",
+    title: "②自律的に考え、動こうとする姿勢がある（主体性・ホウレンソウ）",
+    questions: [
+      "指示がない、またはマニュアル通りにいかない状況に直面した際、どのように対応しましたか？",
+      "業務の中で、ご自身で工夫して改善した経験（または効率化したこと）を教えてください。"
+    ],
+    checkpoints: [
+      "指示待ちにならず、自分から課題を見つけて行動する意欲があるか。",
+      "【リスク回避の視点】勝手な「独断専行」ではなく、自律して考えた上で報告・連絡・相談（ホウレンソウ）ができるバランス感があるか。"
+    ],
+    memoLabel: "評価理由・具体的エピソードメモ"
+  },
+  {
+    key: "empathy", shortLabel: "共感力・感情コントロール",
+    title: "③対人援助職としての思いやり（共感力・感情コントロール）",
+    questions: [
+      "誰か（同僚、後輩、利用者様など）のために、自分の業務範囲を少し超えてサポートしたエピソードはありますか？",
+      "ストレスを感じた時や、相手から強い言葉をぶつけられた時、どのようにご自身の感情をコントロールしていますか？"
+    ],
+    checkpoints: [
+      "相手の立場（背景・気持ち）に配慮できる温かみや共感力があるか。",
+      "福祉現場での感情労働において、怒りや焦りを周囲（同僚・利用者）にぶつけないセルフケア・アンガーマネジメントの基礎があるか。"
+    ],
+    memoLabel: "評価理由・具体的エピソードメモ"
+  },
+  {
+    key: "responsibility", shortLabel: "社会人能力・他責傾向",
+    title: "④基本的社会人能力・自立性（他責傾向の有無・一般的な常識）",
+    questions: [
+      "これまでの職歴の中で一番の壁（挫折や失敗）は何でしたか？また、それをどう乗り越え（対処し）ましたか？",
+      "前職（現職）の退職理由を差し支えない範囲で教えてください。"
+    ],
+    checkpoints: [
+      "【リスク回避の視点】困難や退職の理由を環境・他人のせい（他責）にしすぎていないか。「自分ができたこと・学ぶべき点」に目を向けられているか。",
+      "身だしなみ、言葉遣い、時間厳守、挨拶などの基本的ビジネスマナーが備わっているか。"
+    ],
+    memoLabel: "評価理由・具体的エピソードメモ"
+  },
+  {
+    key: "personality", shortLabel: "個性・組織バランス",
+    title: "⑤求職者の個性・持ち味（組織バランスの見極め）",
+    questions: [
+      "周囲の方（同僚や友人）から、あなたはどのような性格だと言われることが多いですか？",
+      "ご自身が仕事をする上で『これだけは大切にしたい』というこだわりや価値観はありますか？"
+    ],
+    checkpoints: [
+      "【行動タイプ】積極派（行動力重視）／ 慎重派（確実性重視）",
+      "【コミュニケーション】対話・調整重視 ／ 黙々・コツコツ型",
+      "求めるコア3点に反しない範囲での「個性」を把握し、どの部署・チームに配置すると最も活きるかを見極める。"
+    ],
+    checkpointNote: "※良し悪しの判断ではなく、配属先との相性を見る観点です",
+    memoLabel: "個性の特徴・適正の配属先メモ"
+  }
+];
+
+const JUDGMENTS = [
+  { value: "A", label: "A：採用" },
+  { value: "B", label: "B：要検討" },
+  { value: "C", label: "C：不採用" }
+];
+
+const state = { scores: {}, memos: {}, judgment: "" };
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+document.getElementById("interviewDate").value = todayStr();
+
+// 評価基準の表示
+const scaleBox = document.getElementById("scaleBox");
+scaleBox.innerHTML = SCALE.map(s => `<p><b>${s.score}：${s.label}</b> — ${s.desc}</p>`).join("");
+document.getElementById("scaleToggleBtn").addEventListener("click", () => {
+  const visible = scaleBox.style.display !== "none";
+  scaleBox.style.display = visible ? "none" : "block";
+  document.getElementById("scaleToggleBtn").textContent = visible ? "評価基準（1〜5）を確認する" : "評価基準を閉じる";
+});
+
+// 質問項目カードの生成
+const container = document.getElementById("itemsContainer");
+ITEMS.forEach(item => {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const qHtml = item.questions.map(q => `<li>${q}</li>`).join("");
+  const cHtml = item.checkpoints.map(c => `<li>${c}</li>`).join("");
+  const noteHtml = item.checkpointNote ? `<p class="note">${item.checkpointNote}</p>` : "";
+
+  card.innerHTML = `
+    <h2>${item.title}</h2>
+    <div class="qlabel">質問</div>
+    <ul class="qlist">${qHtml}</ul>
+    <div class="qlabel">チェックポイント</div>
+    <ul class="qlist check">${cHtml}</ul>
+    ${noteHtml}
+    <div class="qlabel">評価スコア（1〜5）</div>
+    <div class="score-row" data-key="${item.key}"></div>
+    <div class="score-desc" id="desc-${item.key}">スコアを選択してください</div>
+    <label class="field-label">${item.memoLabel}</label>
+    <textarea rows="2" id="memo-${item.key}" placeholder="面接での具体的な発言・エピソードを記録"></textarea>
+  `;
+  container.appendChild(card);
+
+  const row = card.querySelector(`.score-row[data-key="${item.key}"]`);
+  [5,4,3,2,1].forEach(s => {
+    const btn = document.createElement("button");
+    btn.className = "score-btn";
+    btn.type = "button";
+    btn.textContent = s;
+    btn.addEventListener("click", () => {
+      state.scores[item.key] = s;
+      row.querySelectorAll(".score-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const info = SCALE.find(x => x.score === s);
+      document.getElementById(`desc-${item.key}`).innerHTML = `<b>${info.label}</b> — ${info.desc}`;
+      updateTotal();
+    });
+    row.appendChild(btn);
+  });
+
+  card.querySelector(`#memo-${item.key}`).addEventListener("input", (e) => {
+    state.memos[item.key] = e.target.value;
+  });
+});
+
+// 判定ボタン
+const judgRow = document.getElementById("judgmentRow");
+JUDGMENTS.forEach(j => {
+  const btn = document.createElement("button");
+  btn.className = "judg-btn";
+  btn.type = "button";
+  btn.textContent = j.label;
+  btn.addEventListener("click", () => {
+    state.judgment = j.value;
+    judgRow.querySelectorAll(".judg-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+  judgRow.appendChild(btn);
+});
+
+function updateTotal() {
+  const vals = ITEMS.map(it => state.scores[it.key] || 0);
+  const total = vals.reduce((a,b) => a+b, 0);
+  const answered = vals.filter(v => v > 0).length;
+  document.getElementById("totalScore").textContent = total;
+  document.getElementById("answeredCount").textContent = answered;
+  return total;
+}
+
+function csvEscape(v) {
+  const s = (v === undefined || v === null) ? "" : String(v);
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+function showStatus(type, message) {
+  document.getElementById("statusBox").innerHTML =
+    `<div class="status ${type}">${message}</div>`;
+}
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  const candidateName = document.getElementById("candidateName").value.trim();
+  const interviewerName = document.getElementById("interviewerName").value.trim();
+  const interviewDate = document.getElementById("interviewDate").value;
+
+  if (!candidateName) { showStatus("error", "応募者氏名を入力してください。"); return; }
+  if (!interviewerName) { showStatus("error", "面接官氏名を入力してください。"); return; }
+
+  const totalScore = updateTotal();
+  const judgmentLabel = JUDGMENTS.find(j => j.value === state.judgment)?.label || "";
+  const risk = document.getElementById("risk").value;
+  const strength = document.getElementById("strength").value;
+  const overallComment = document.getElementById("overallComment").value;
+  const createdAt = new Date().toLocaleString("ja-JP");
+
+  const headers = [
+    "応募者氏名","面接日","面接官氏名","判定",
+    ...ITEMS.flatMap(it => [`${it.shortLabel}_スコア`, `${it.shortLabel}_メモ`]),
+    "合計点","リスク・気になる点","強み・期待できる点","総合所感・判定理由","登録日時"
+  ];
+  const row = [
+    candidateName, interviewDate, interviewerName, judgmentLabel,
+    ...ITEMS.flatMap(it => [state.scores[it.key] ?? "", state.memos[it.key] ?? ""]),
+    totalScore, risk, strength, overallComment, createdAt
+  ];
+  const csv = "\uFEFF" + [headers.map(csvEscape).join(","), row.map(csvEscape).join(",")].join("\r\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `面接評価_${candidateName}_${interviewDate}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showStatus("success", "評価を保存しました（CSVをダウンロードしました）。次の候補者の入力に進めます。");
+
+  // フォームをリセット（面接官氏名は保持）
+  document.getElementById("candidateName").value = "";
+  document.getElementById("interviewDate").value = todayStr();
+  document.getElementById("risk").value = "";
+  document.getElementById("strength").value = "";
+  document.getElementById("overallComment").value = "";
+  state.scores = {};
+  state.memos = {};
+  state.judgment = "";
+  document.querySelectorAll(".score-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".judg-btn").forEach(b => b.classList.remove("active"));
+  ITEMS.forEach(it => {
+    document.getElementById(`memo-${it.key}`).value = "";
+    document.getElementById(`desc-${it.key}`).textContent = "スコアを選択してください";
+  });
+  updateTotal();
+});
+</script>
+</body>
+</html>
