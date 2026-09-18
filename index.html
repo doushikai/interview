@@ -141,6 +141,28 @@
 </div>
 
 <script>
+// ============================================================
+// ここにGoogle Apps ScriptのウェブアプリURLを貼り付けてください
+// （例：https://script.google.com/macros/s/xxxxxxxx/exec）
+// 空欄のままでも、CSVダウンロードは今までどおり動作します。
+// ============================================================
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwSspd4wHo_LF21h--Yr6Dw4M4rZANVz-TPkKeAXNj9nVvKRhPTbC5S-ZaGRxaMkh4q3g/exec";
+
+async function postToSheet_(key, value) {
+  if (!SHEET_API_URL) return { ok: false, skipped: true };
+  try {
+    const res = await fetch(SHEET_API_URL, {
+      method: "POST",
+      // Content-Typeは指定しない（Apps Script側とのCORS相性のため）
+      body: JSON.stringify({ key, value }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
 const SCALE = [
   {score:5, label:"非常に優れている", desc:"法人のお手本・リーダー候補となり得る行動が確認できる"},
   {score:4, label:"良好", desc:"法人の求める基準を満たしており、即戦力・安心感がある"},
@@ -338,13 +360,17 @@ function showStatus(type, message) {
     `<div class="status ${type}">${message}</div>`;
 }
 
-document.getElementById("saveBtn").addEventListener("click", () => {
+document.getElementById("saveBtn").addEventListener("click", async () => {
   const candidateName = document.getElementById("candidateName").value.trim();
   const interviewerName = document.getElementById("interviewerName").value.trim();
   const interviewDate = document.getElementById("interviewDate").value;
 
   if (!candidateName) { showStatus("error", "応募者氏名を入力してください。"); return; }
   if (!interviewerName) { showStatus("error", "面接官氏名を入力してください。"); return; }
+
+  const saveBtn = document.getElementById("saveBtn");
+  saveBtn.disabled = true;
+  saveBtn.textContent = "保存中…";
 
   const totalScore = updateTotal();
   const judgmentLabel = JUDGMENTS.find(j => j.value === state.judgment)?.label || "";
@@ -375,7 +401,26 @@ document.getElementById("saveBtn").addEventListener("click", () => {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
-  showStatus("success", "評価を保存しました（CSVをダウンロードしました）。次の候補者の入力に進めます。");
+  // Googleスプレッドシートへも送信（CSVダウンロードとは独立して実行）
+  const record = {
+    candidateName, interviewDate, interviewerName, judgmentLabel,
+    scores: { ...state.scores },
+    memos: { ...state.memos },
+    totalScore, risk, strength, overallComment, createdAt
+  };
+  const recordKey = `record_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const sheetResult = await postToSheet_(recordKey, JSON.stringify(record));
+
+  if (!SHEET_API_URL) {
+    showStatus("success", "評価を保存しました（CSVをダウンロードしました）。次の候補者の入力に進めます。");
+  } else if (sheetResult && sheetResult.ok) {
+    showStatus("success", "評価を保存しました（CSVダウンロード＋スプレッドシートへの保存が完了しました）。次の候補者の入力に進めます。");
+  } else {
+    showStatus("error", "CSVはダウンロードできましたが、スプレッドシートへの保存に失敗しました。通信状況をご確認のうえ、必要であればCSVファイルを施設長へお送りください。");
+  }
+
+  saveBtn.disabled = false;
+  saveBtn.textContent = "この候補者の評価を保存（CSVダウンロード）";
 
   // フォームをリセット（面接官氏名は保持）
   document.getElementById("candidateName").value = "";
